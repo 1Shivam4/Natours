@@ -12,10 +12,12 @@ process.on('uncaughtException', err => {
   process.exit(1);
 });
 
-const DB = process.env.DATABASE.replace(
-  '<PASSWORD>',
-  process.env.DATABASE_PASSWORD
-);
+// const DB = process.env.DATABASE.replace(
+//   '<PASSWORD>',
+//   process.env.DATABASE_PASSWORD
+// );
+
+const DB = process.env.DATABASE;
 
 // this is the hosted database version
 mongoose
