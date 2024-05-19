@@ -12,21 +12,19 @@ const signToken = id => {
   });
 };
 
-const createSendToken = (user, statusCode, res) => {
+const createSendToken = (user, statusCode, req, res) => {
   const token = signToken(user._id);
-  const cookieOptions = {
+
+  res.cookie('jwt', token, {
     expiresIn: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRE_IN * 23 * 60 * 60 * 1000
     ),
-    httpOnly: true
-  };
-
-  res.cookie('jwt', token, cookieOptions);
+    httpOnly: true,
+    secure: req.secure || req.header('x-forwarded-proto') === 'https'
+  });
 
   // this should remove the password form the signup output
   user.password = undefined;
-
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
   res.status(statusCode).json({
     status: 'success',
     token,
@@ -47,7 +45,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   // console.log(url);
   await new Email(newUser, url).sendWelcome();
 
-  createSendToken(newUser, 201, res);
+  createSendToken(newUser, 201, req, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -64,7 +62,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 3. if everything okay, send token to the client
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 });
 
 exports.logout = (req, res) => {
@@ -278,7 +276,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
   // 3) Update the changedPasswordAt property for the user
   // 4) Log the user in send jwt
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 });
 
 // This is only for the user who is already logged in
@@ -297,7 +295,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
   // User.findByIdAndUpdate will not work intended
 
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 
   //4 . Log USer in send JWT
 });
